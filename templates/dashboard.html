@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Call Assistant Dashboard</title>
+    <style>
+        .call-card { 
+            border: 1px solid #ccc; 
+            margin: 10px; 
+            padding: 15px; 
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .live-call { background: #e8f5e8; border-color: #4CAF50; }
+        .caller { color: #007bff; font-weight: bold; }
+        .ai { color: #28a745; font-weight: bold; }
+        .transcript {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            background: #fff;
+            margin-top: 10px;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #888;
+            margin-right: 5px;
+        }
+        h1 { font-family: sans-serif; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Live Call Monitor</h1>
+    <div id="active-calls"></div>
+    <script>
+        const socket = io();
+        
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('call_started', (data) => {
+            const callsDiv = document.getElementById('active-calls');
+            // Check if call already exists (reconnection case)
+            if (document.getElementById('call-' + data.call_sid)) return;
+            
+            callsDiv.innerHTML += `<div class="call-card live-call" id="call-${data.call_sid}">
+                <h3>Call from: ${data.from_number}</h3>
+                <p>Started: ${data.timestamp}</p>
+                <div class="transcript" id="transcript-${data.call_sid}"></div>
+            </div>`;
+        });
+        
+        socket.on('call_updated', (data) => {
+            const transcriptDiv = document.getElementById('transcript-' + data.call_sid);
+            if (transcriptDiv) {
+                const speakerClass = data.speaker === 'Caller' ? 'caller' : 'ai';
+                transcriptDiv.innerHTML += `<p><span class="timestamp">[${data.timestamp}]</span><strong class="${speakerClass}">${data.speaker}:</strong> ${data.message}</p>`;
+                transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+            }
+        });
+
+        socket.on('call_ended', (data) => {
+            const callDiv = document.getElementById('call-' + data.call_sid);
+            if (callDiv) {
+                callDiv.classList.remove('live-call');
+                callDiv.style.backgroundColor = '#f0f0f0';
+                callDiv.innerHTML += '<p><strong>Call Ended</strong></p>';
+            }
+        });
+    </script>
+</body>
+</html>
