@@ -13,9 +13,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
-# Use 'threading' for Windows local development, let SocketIO decide for others (production)
+# Use 'threading' for Windows local development, let SocketIO decide for others (production, gevent)
 import sys
-async_mode = 'threading' if sys.platform.startswith('win') else None
+async_mode = 'threading' if sys.platform.startswith('win') else 'gevent'
 socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins="*")
 
 # Configuration
